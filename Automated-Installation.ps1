@@ -369,7 +369,8 @@ function BeginInstall {
 
     # Installing Printer drivers and ProTouch.
     Start-Process -FilePath 'C:\Install\PrintDrivers.exe' -ArgumentList '/Silent /Install' -PassThru
-	Start-Process -Wait -FilePath 'C:\Install\ProTouch_Setup_v1.3.3.1_Live\Application Setup - ProTouch Only\setup.exe' -ArgumentList '/s /v/qn' -PassThru
+    Start-Process -Wait -FilePath 'C:\Install\ProTouch_Setup_v1.3.3.1_Live\Application Setup - ProTouch Only\setup.exe' -ArgumentList '/s /v/qn' -PassThru
+
 
     # Sets the backgroumd image.
     xcopy C:\Install\amendo.jpg C:\Windows\Web\Wallpaper\Theme1 /v /s /e
