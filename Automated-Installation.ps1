@@ -54,7 +54,7 @@ function MinHWReq {
 
     $DiskSpace = $(Get-WmiObject -Class win32_logicaldisk | Where-Object -Property Name -eq C:).FreeSpace / 1GB 
 
-    if ($DiskSpace -gt 29) { 
+    if ($DiskSpace -gt 5) { 
         Write-Output "Disk Space requirments are satisfied..."
         Write-Output "Starting Download and installation..."
         Download-InstallFiles # Executes function to download and extract files if minimum system requirments are meet.
@@ -301,7 +301,7 @@ function Download-InstallFiles {
     # Sets UAC to 0
     powershell Set-Itemproperty -path 'HKLM:\Software\Microsoft\Windows\CurrentVersion\policies\system' -Name 'EnableLUA' -value 0
     
-    $Url = 'https://autoupdate.tellix.no/ProTouchSetupsSupport/Install.zip'
+    $Url = 'https://autoupdate.tellix.no/ProTouchSetupsSupport/install.zip'
     $ZipFile = 'C:\Install.zip' + $(Split-Path -Path $Url -Leaf) 
     $Destination = 'C:\' 
 
