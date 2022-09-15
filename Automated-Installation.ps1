@@ -1,6 +1,6 @@
 ##############################################################################################################################################
 #   Fully automated software installation for Windows 10 Pro x64 and x86
-#   Version 1.0.0.0 - Created: 30.08.2022 - Updated: N/A
+#   Version 1.0.0.1 - Created: 30.08.2022 - Updated: 15.09.2022 with bugfixes.
 #   The script does the following tasks:
 #   ProTouch Installation, SQL Server 2012 SP2 Installation, Teamviewer Installation, Google Chrome Installation
 #   Debloating Windows 10 with custom settings, Assigning Teamviewer Client to Amendo Group, Importing Web Browser custom browser settings.
@@ -54,7 +54,7 @@ function MinHWReq {
 
     $DiskSpace = $(Get-WmiObject -Class win32_logicaldisk | Where-Object -Property Name -eq C:).FreeSpace / 1GB 
 
-    if ($DiskSpace -gt 49) { 
+    if ($DiskSpace -gt 29) { 
         Write-Output "Disk Space requirments are satisfied..."
         Write-Output "Starting Download and installation..."
         Download-InstallFiles # Executes function to download and extract files if minimum system requirments are meet.
@@ -115,7 +115,7 @@ function Installation-GUI {
                 $Label.Text = "Processing ..."
                 $ProgressBar.visible
 
-                Download-InstallFiles
+                MinHWReq
 
                 $job = Start-Job -ScriptBlock $jobScript
                 do { [System.Windows.Forms.Application]::DoEvents() } until ($job.State -eq "Completed")
@@ -355,22 +355,21 @@ function BeginInstall {
 
     }
     else {   
-        msiexec.exe /i "C:\Install\TeamViewer_Host.msi" /qn CUSTOMCONFIGID=censored
+        msiexec.exe /i "C:\Install\TeamViewer_Host.msi" /qn CUSTOMCONFIGID=6c8bgsr
         timeout 10
 
         if ($TWx64Test) {
-            Start-Process -FilePath "C:\Program Files\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=censored --grant-easy-access'  
+            Start-Process -FilePath "C:\Program Files\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=17028417-TXenUpNcYD7d5PYF65cv --grant-easy-access'  
         }
         if ($TWx86Test) {
-            Start-Process -FilePath "C:\Program Files (x86)\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=censored --grant-easy-access'
+            Start-Process -FilePath "C:\Program Files (x86)\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=17028417-TXenUpNcYD7d5PYF65cv --grant-easy-access'
         }
     }
 
 
     # Installing Printer drivers and ProTouch.
     Start-Process -FilePath 'C:\Install\PrintDrivers.exe' -ArgumentList '/Silent /Install' -PassThru
-    Start-Process -Wait -FilePath 'C:\Install\ProTouch_Setup_v1.3.3.1_Live\Application Setup - ProTouch Only\setup.exe' -ArgumentList '/s /v/qn' -PassThru
-
+	Start-Process -Wait -FilePath 'C:\Install\ProTouch_Setup_v1.3.3.1_Live\Application Setup - ProTouch Only\setup.exe' -ArgumentList '/s /v/qn' -PassThru
 
     # Sets the backgroumd image.
     xcopy C:\Install\amendo.jpg C:\Windows\Web\Wallpaper\Theme1 /v /s /e
