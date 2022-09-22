@@ -1,9 +1,9 @@
 ##############################################################################################################################################
 #   Fully automated software installation for Windows 10 Pro x64 and x86
-#   Version 1.0.0.1 - Created: 30.08.2022 - Updated: 15.09.2022 with bugfixes.
+#   Version 1.1 - Created: 30.08.2022 - Updated: 22.09.2022 with bugfixes.
 #   The script does the following tasks:
 #   ProTouch Installation, SQL Server 2012 SP2 Installation, Teamviewer Installation, Google Chrome Installation
-#   Debloating Windows 10 with custom settings, Assigning Teamviewer Client to Amendo Group, Importing Web Browser custom browser settings.
+#   Debloating Windows 10 with custom settings, Assigning Teamviewer Client to Amendo Group, Importing Web Browser custom browser settings and writing all console outputs to c:\installlog.txt
 #   
 #   Made by Younas Sidia
 ##############################################################################################################################################
@@ -217,10 +217,10 @@ function Installation-GUI {
 
                 Eierskifte
 
-                $job = Start-Job -ScriptBlock $jobScript
-                do { [System.Windows.Forms.Application]::DoEvents() } until ($job.State -eq "Completed")
-                Remove-Job -Job $job -Force
-
+                $job2 = Start-Job -ScriptBlock $jobScript2
+                do { [System.Windows.Forms.Application]::DoEvents() } until ($job2.State -eq "Completed")
+                Remove-Job -Job $job2 -Force
+                
 
                 $Label.Text = "Process Complete"
                 $ProgressBar.Hide()
@@ -297,6 +297,7 @@ function Installation-GUI {
 }
 
 
+
 # Downloads Install files from official site.
 function Download-InstallFiles {
 
@@ -323,11 +324,14 @@ function Download-InstallFiles {
 
 
 function BeginInstall {
+    Start-Transcript -Append C:\InstallLog.txt
 
 
     # Checks if Chrome is installed and if its not, then install it and set Amendo's settings.
-    $chromeInstalled = (Get-Item (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe').'(Default)').VersionInfo
-    if ($null -eq $chromeInstalled.FileName) {
+
+    $chromeInstalled = Test-Path -Path "C:\Program Files\Google\Chrome\Application\chrome.exe"
+
+    if (!$chromeInstalled) {
 
         Write-Host "Chrome is not installed. Installing now..."
         Start-Process -Wait -FilePath 'C:\Install\ChromeSetup.exe' -ArgumentList '/Silent /Install' -PassThru
@@ -353,26 +357,29 @@ function BeginInstall {
     $TWx64Test = Test-Path -Path 'C:\Program Files\TeamViewer\TeamViewer.exe'
 
     if ($TWx64Test -Or $TWx86Test) {
-        
+
+        Write-Output "Teamviewer already installed. Skipping Teamviewer installation"
         [System.Windows.Forms.MessageBox]::Show('Teamviewer already installed. Skipping Teamviewer installation...')
 
     }
     else {   
-        msiexec.exe /i "C:\Install\TeamViewer_Host.msi" /qn CUSTOMCONFIGID=xxxxxxxxxxxx
-        timeout 10
+        Write-Output "Installing Teamviewer and assigning API Token"
+        
+        msiexec.exe /i "C:\Install\TeamViewer_Host.msi" /qn CUSTOMCONFIGID=6c8bgsr
+        timeout 3
 
         if ($TWx64Test) {
-            Start-Process -FilePath "C:\Program Files\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=xxxxxxxxxxxx --grant-easy-access'  
+            Start-Process -FilePath "C:\Program Files\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=17028417-TXenUpNcYD7d5PYF65cv --grant-easy-access'  
         }
         if ($TWx86Test) {
-            Start-Process -FilePath "C:\Program Files (x86)\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=xxxxxxxxxxxx --grant-easy-access'
+            Start-Process -FilePath "C:\Program Files (x86)\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=17028417-TXenUpNcYD7d5PYF65cv --grant-easy-access'
         }
     }
 
 
     # Installing Printer drivers and ProTouch.
     Start-Process -FilePath 'C:\Install\PrintDrivers.exe' -ArgumentList '/Silent /Install' -PassThru
-	Start-Process -Wait -FilePath 'C:\Install\ProTouch_Setup_v1.3.3.1_Live\Application Setup - ProTouch Only\setup.exe' -ArgumentList '/s /v/qn' -PassThru
+    Start-Process -Wait -FilePath 'C:\Install\ProTouch_Setup_v1.3.3.1_Live\Application Setup - ProTouch Only\setup.exe' -ArgumentList '/s /v/qn' -PassThru
 
     # Sets the backgroumd image.
     xcopy C:\Install\amendo.jpg C:\Windows\Web\Wallpaper\Theme1 /v /s /e
@@ -396,36 +403,38 @@ function BeginInstall {
     $Env:PATH = "C:\Program Files\Microsoft SQL Server\110\Tools\Binn\;$Env:PATH"
     
     # Verifies ProTouch, SQL and DB Scheme is installed and importet correctly.
-    $CK1 = Test-Path -Path "C:\Program Files (x86)\Tellix\ProTouch\PTClient.exe"
+    $PTinstallLocation = Test-Path -Path "C:\Program Files (x86)\Tellix\ProTouch\PTClient.exe"
     $GetDBVersion = sqlcmd -E -S .\sqlexpress -Q "USE ProTouch SET NOCOUNT ON;"
     
     if ($GetDBVersion.Contains("Changed database context to 'ProTouch'")) { 
         Write-Output "ProTouhch DB Already Exist. Skipping"
     }
     else {
-        Write-Output "DB ProTouch Does not exist. Importing now"
         sqlcmd -E -S .\sqlexpress -i "C:\Install\ProTouch_Setup_v1.3.3.1_Live\Database Script\ProTouchDB-LiveServer.sql"
-    }
 
-    If($GetDBVersion -And $CK1) {
-    
         Write-Output "SQL ProTouch scheme Imported sucessfully!"
         [System.Windows.Forms.MessageBox]::Show('Software POS Installation Completed!')
+    }
 
+    If(!$PTinstallLocation) {
+
+        Write-Warning "ProTouch Installation was not installed successfully. Trying again to install..."
+        Start-Process -Wait -FilePath 'C:\Install\ProTouch_Setup_v1.3.3.1_Live\Application Setup - ProTouch Only\setup.exe' -ArgumentList '/s /v/qn' -PassThru
+        
     } Else {
    
-        Write-Host "SQL Was not imported sucessfully."
-        [System.Windows.Forms.MessageBox]::Show('SQL Was not imported sucessfully. Please Contact Amendo Support!')
+        Write-Host "ProTouch sucessfully installed."
    
     }
 
-
+    Stop-Transcript
 }
 
 
 function Eierskifte {
 
     sqlcmd -E -S .\sqlexpress -Q "BACKUP DATABASE [ProTouch] TO DISK='C:\install\ProTouchBackup.bak'"
+    
 
     if (Test-Path -Path "C:\install\ProTouchBackup.bak") {
 
@@ -437,19 +446,20 @@ function Eierskifte {
 
         sqlcmd -E -S .\sqlexpress -i "C:\Install\ProTouch_Setup_v1.3.3.1_Live\Database Script\ProTouchDB-LiveServer.sql"
 
-        C:/install/script.ps1
+        $ProTouch = Get-WmiObject -Class Win32_Product | Where-Object{$_.Name -eq "ProTouch"}
+        $ProTouch.Uninstall()
 
         Start-Process -Wait -FilePath 'C:\Install\ProTouch_Setup_v1.3.3.1_Live\Application Setup - ProTouch Only\setup.exe' -ArgumentList '/s /v/qn' -PassThru
 
         [System.Windows.Forms.MessageBox]::Show('Ownership software changes completed! Please start ProTouch and contact Amendo Support for License key.')
     }
     else {
+
+        Write-Warning "An error occured. Please contact support!"
         [System.Windows.Forms.MessageBox]::Show('An error occured. Please contact support!')
     }
-    
-    
+
 }
 
 Hide-Console
 Installation-GUI
-
