@@ -365,14 +365,14 @@ function BeginInstall {
     else {   
         Write-Output "Installing Teamviewer and assigning API Token"
         
-        msiexec.exe /i "C:\Install\TeamViewer_Host.msi" /qn CUSTOMCONFIGID=6c8bgsr
+        msiexec.exe /i "C:\Install\TeamViewer_Host.msi" /qn CUSTOMCONFIGID=xxxx
         timeout 3
 
         if ($TWx64Test) {
-            Start-Process -FilePath "C:\Program Files\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=17028417-TXenUpNcYD7d5PYF65cv --grant-easy-access'  
+            Start-Process -FilePath "C:\Program Files\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=xxxxx-xxxxxxxxxxxxxxx --grant-easy-access'  
         }
         if ($TWx86Test) {
-            Start-Process -FilePath "C:\Program Files (x86)\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=17028417-TXenUpNcYD7d5PYF65cv --grant-easy-access'
+            Start-Process -FilePath "C:\Program Files (x86)\TeamViewer\TeamViewer.exe" -ArgumentList 'assign --api-token=xxxxxx-xxxxxxxxxxxxx --grant-easy-access'
         }
     }
 
